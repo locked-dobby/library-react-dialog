@@ -17,18 +17,21 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
     const { hideDialog, findDialogById } = useDialogContext();
     const hideWorkerId = useRef<ReturnType<typeof setTimeout>>();
 
+    const currentDialog = useMemo(() => {
+        return findDialogById(id);
+    }, [findDialogById, id]);
+
     const hide = useCallback(
         (result?: DialogResult) => {
-            const dialog = findDialogById(id);
-            if (dialog) {
-                dialog.resolve({
+            if (currentDialog) {
+                currentDialog.resolve({
                     id,
                     result,
                 });
             }
             hideDialog(id);
         },
-        [findDialogById, hideDialog, id]
+        [currentDialog, hideDialog, id]
     );
 
     const hideAfter = useCallback(
@@ -38,9 +41,8 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
             }
 
             hideWorkerId.current = setTimeout(() => {
-                const dialog = findDialogById(id);
-                if (dialog) {
-                    dialog.resolve({
+                if (currentDialog) {
+                    currentDialog.resolve({
                         id,
                         result,
                     });
@@ -49,7 +51,7 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
                 hideWorkerId.current = undefined;
             }, afterMilliseconds);
         },
-        [findDialogById, hideDialog, id]
+        [currentDialog, hideDialog, id]
     );
 
     const actions = useMemo<DialogActionContextProviderActions<DialogResult>>(() => {
