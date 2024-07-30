@@ -11,11 +11,7 @@ export interface DialogActionContextProviderActions<DialogResult> {
     hideAfter: (afterMilliseconds: number, result: DialogResult) => void;
 }
 
-export const DialogActionContext = React.createContext<
-    // TODO
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    DialogActionContextProviderActions<any>
->({} as DialogActionContextProviderActions<unknown>);
+export const DialogActionContext = React.createContext<DialogActionContextProviderActions<any>>({} as DialogActionContextProviderActions<unknown>);
 
 export const DialogActionContextProvider = <DialogResult,>({ id, children }: DialogActionContextProviderProps) => {
     const { hideDialog, findDialogById } = useDialogContext();

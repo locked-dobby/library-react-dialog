@@ -27,6 +27,7 @@ interface DialogContextProviderProps {
     Alert?: ComponentType<AlertProps>;
     Confirm?: ComponentType<ConfirmProps>;
     Toast?: ComponentType<ToastProps>;
+    onInterceptScrollBlocking?: (visibleDialogs: Array<Dialog>, visibleToasts: Array<Dialog>) => void;
     children?: ReactNode;
 }
 
@@ -49,33 +50,41 @@ export const DialogContextProvider = ({
     Alert,
     Confirm,
     Toast,
+    onInterceptScrollBlocking,
     children,
 }: DialogContextProviderProps) => {
-    const [dialogs, setDialogs] = useState<Array<Dialog<any>>>();
+    const [dialogs, setDialogs] = useState<Array<Dialog<any>>>([]);
 
     const beforeOverflow = useRef<string>("");
 
     // scroll blocking
     useEffect(() => {
-        const visibleDialogCount =
-            dialogs?.reduce((acc, dialog) => {
-                return acc + (dialog.options?.dialogType !== DIALOG_TYPE_TOAST && dialog.visible ? 1 : 0);
-            }, 0) ?? 0;
-
-        if (visibleDialogCount > 0) {
-            const currentOverflow = window.document.body.style.overflow;
-            if (currentOverflow !== "hidden") {
-                beforeOverflow.current = currentOverflow;
-            }
-            window.document.body.style.overflow = "hidden";
+        if (onInterceptScrollBlocking) {
+            onInterceptScrollBlocking(
+                dialogs.filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST),
+                dialogs.filter((dialog) => dialog.visible && dialog.options?.dialogType === DIALOG_TYPE_TOAST)
+            );
         } else {
-            if (beforeOverflow.current) {
-                window.document.body.style.overflow = beforeOverflow.current;
+            const visibleDialogCount =
+                dialogs.reduce((acc, dialog) => {
+                    return acc + (dialog.options?.dialogType !== DIALOG_TYPE_TOAST && dialog.visible ? 1 : 0);
+                }, 0) ?? 0;
+
+            if (visibleDialogCount > 0) {
+                const currentOverflow = window.document.body.style.overflow;
+                if (currentOverflow !== "hidden") {
+                    beforeOverflow.current = currentOverflow;
+                }
+                window.document.body.style.overflow = "hidden";
             } else {
-                window.document.body.style.removeProperty("overflow");
+                if (beforeOverflow.current) {
+                    window.document.body.style.overflow = beforeOverflow.current;
+                } else {
+                    window.document.body.style.removeProperty("overflow");
+                }
             }
         }
-    }, [dialogs, dialogs?.length]);
+    }, [dialogs, dialogs.length, onInterceptScrollBlocking]);
 
     const showDialog = useCallback(
         <DialogResult,>(element: ReactNode, options?: DialogOptions): Promise<ShowDialogResult<DialogResult>> => {
@@ -85,12 +94,12 @@ export const DialogContextProvider = ({
                 resolve = _resolve;
             });
 
-            const foundDialogByUnique = options?.unique !== undefined ? dialogs?.find((dialog) => dialog.options?.unique === options.unique) : undefined;
+            const foundDialogByUnique = options?.unique !== undefined ? dialogs.find((dialog) => dialog.options?.unique === options.unique) : undefined;
             if (foundDialogByUnique) {
                 setDialogs((prevDialogs) => {
-                    return prevDialogs?.map((prevDialog) => {
+                    return prevDialogs.map((prevDialog) => {
                         if (prevDialog.id === foundDialogByUnique.id) {
-                            return { ...prevDialog, resolve, visible: true };
+                            return { ...prevDialog, element, resolve, visible: true };
                         } else {
                             return prevDialog;
                         }
@@ -108,11 +117,8 @@ export const DialogContextProvider = ({
                         resolve,
                         options,
                     };
-                    if (Array.isArray(prevDialogs)) {
-                        return [...prevDialogs, dialog];
-                    } else {
-                        return [dialog];
-                    }
+
+                    return [...prevDialogs, dialog];
                 });
             }
 
@@ -123,7 +129,7 @@ export const DialogContextProvider = ({
 
     const hideDialog = useCallback((id: number) => {
         setDialogs((prevDialogs) => {
-            return prevDialogs?.map((dialog) => {
+            return prevDialogs.map((dialog) => {
                 const flag = dialog.id === id;
                 if (flag) {
                     dialog.options?.onDismiss && dialog.options?.onDismiss();
@@ -140,7 +146,7 @@ export const DialogContextProvider = ({
 
     const hideDialogAll = useCallback(() => {
         setDialogs((prevDialogs) => {
-            return prevDialogs?.map((dialog) => {
+            return prevDialogs.map((dialog) => {
                 if (dialog.visible) {
                     // execute callback cause invisible target
                     dialog.options?.onDismiss && dialog.options?.onDismiss();
@@ -212,7 +218,7 @@ export const DialogContextProvider = ({
 
     const findDialogById = useCallback(
         (id: number) => {
-            return dialogs?.find((dialog) => dialog.id === id);
+            return dialogs.find((dialog) => dialog.id === id);
         },
         [dialogs]
     );
@@ -222,7 +228,7 @@ export const DialogContextProvider = ({
             const found = findDialogById(id);
             if (found) {
                 setDialogs((prevDialogs) => {
-                    return prevDialogs?.map((prevDialog) => {
+                    return prevDialogs.map((prevDialog) => {
                         if (prevDialog.id === found.id) {
                             return { ...prevDialog, ...update };
                         } else {
@@ -254,10 +260,12 @@ export const DialogContextProvider = ({
     return (
         <DialogContext.Provider value={actions}>
             {children}
-            {selectComponent((toastContents?.length ?? 0) > 0, () => (
+            {selectComponent(toastContents.length > 0, () => (
                 <ToastContainer>{toastContents}</ToastContainer>
             ))}
-            <DialogContainer>{dialogContents}</DialogContainer>
+            {selectComponent(dialogContents.length > 0, () => (
+                <DialogContainer>{dialogContents}</DialogContainer>
+            ))}
         </DialogContext.Provider>
     );
 };
