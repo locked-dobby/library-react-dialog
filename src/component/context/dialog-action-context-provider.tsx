@@ -1,5 +1,6 @@
 import React, { ReactNode, useCallback, useMemo, useRef } from "react";
 import { useDialogContext } from "../hook/use-dialog-context";
+import { NavigateOptions } from "../interface/abstract-dialog-interfaces";
 
 interface DialogActionContextProviderProps {
     id: number;
@@ -9,6 +10,7 @@ interface DialogActionContextProviderProps {
 export interface DialogActionContextProviderActions<DialogResult> {
     hide: (result: DialogResult) => void;
     hideAfter: (afterMilliseconds: number, result: DialogResult) => void;
+    doNavigate: (callback: () => void, navigateOptions?: NavigateOptions) => void;
 }
 
 export const DialogActionContext = React.createContext<DialogActionContextProviderActions<any>>({} as DialogActionContextProviderActions<unknown>);
@@ -54,12 +56,23 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
         [currentDialog, hideDialog, id]
     );
 
+    const doNavigate = useCallback(
+        (callback: () => void, { keepVisibleDialog = false }: NavigateOptions = {}) => {
+            if (!keepVisibleDialog) {
+                hideDialog(id);
+            }
+            callback();
+        },
+        [hideDialog, id]
+    );
+
     const actions = useMemo<DialogActionContextProviderActions<DialogResult>>(() => {
         return {
             hide,
             hideAfter,
+            doNavigate,
         };
-    }, [hide, hideAfter]);
+    }, [hide, hideAfter, doNavigate]);
 
     return <DialogActionContext.Provider value={actions}>{children}</DialogActionContext.Provider>;
 };

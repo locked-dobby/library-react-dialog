@@ -31,3 +31,11 @@ export interface ShowDialogResult<DialogResult = unknown> {
 }
 
 export type UpdateDialog = Partial<Pick<Dialog, "visible" | "options">>;
+
+export interface HideOptions {
+    ignoreHistory?: boolean; // default false
+}
+
+export interface NavigateOptions {
+    keepVisibleDialog?: boolean; // default false if withHistory
+}

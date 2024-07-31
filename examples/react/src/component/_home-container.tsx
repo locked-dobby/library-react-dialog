@@ -1,5 +1,6 @@
 import { useDialogContext } from "@edge-effect/react-abstract-dialog";
-import MyCustomDialog, { MyCustomDialogResult } from "./popup/_my-custom-dialog";
+import MyCustomDialog, { MyCustomDialogResult } from "./popup/custom/my-custom-dialog";
+import RedirectExampleDialog from "./popup/custom/redirect-example-dialog";
 
 const choices = [
     { id: 1, display: "Apple" },
@@ -13,22 +14,43 @@ const choices = [
     { id: 9, display: "Blackberry" },
 ];
 
-const TestContainer = () => {
+const HomeContainer = () => {
     const { confirm, alert, toast, showDialog } = useDialogContext();
     return (
         <>
+            <h1>Dialog context example</h1>
             <ul>
                 <li>
-                    <button
-                        onClick={async () => {
-                            if (await confirm({ title: "Hello", message: "Select your answer" })) {
-                                console.log("result is true");
-                            } else {
-                                console.log("result is false");
-                            }
-                        }}>
-                        Show confirm
-                    </button>
+                    <ul className="horizontal">
+                        <li>
+                            <button
+                                onClick={async () => {
+                                    if (await confirm({ title: "Hello", message: "Select your answer" })) {
+                                        console.log("result is true");
+                                    } else {
+                                        console.log("result is false");
+                                    }
+                                }}>
+                                Show confirm
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                onClick={async () => {
+                                    if (await confirm({ title: "Hello", message: "Select your answer" })) {
+                                        if (await confirm({ title: "Hello again!", message: "Select your answer please..." })) {
+                                            console.log("result2 is true");
+                                        } else {
+                                            console.log("result2 is false");
+                                        }
+                                    } else {
+                                        console.log("result is false");
+                                    }
+                                }}>
+                                Show confirm and again
+                            </button>
+                        </li>
+                    </ul>
                 </li>
                 <li>
                     <button
@@ -69,9 +91,18 @@ const TestContainer = () => {
                         Show custom dialog
                     </button>
                 </li>
+                <li>
+                    <button
+                        onClick={async () => {
+                            const dialog = await showDialog(<RedirectExampleDialog />);
+                            console.log("result", dialog.result);
+                        }}>
+                        Show redirect example
+                    </button>
+                </li>
             </ul>
         </>
     );
 };
 
-export default TestContainer;
+export default HomeContainer;
