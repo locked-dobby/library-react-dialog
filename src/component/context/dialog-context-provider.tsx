@@ -27,6 +27,7 @@ type DialogContentContainer = ComponentType<{ children: ReactNode }>;
 interface DialogContextProviderProps {
     experimental_withHistory?: boolean;
     experimental_withHistoryForwardRestore?: boolean; // default false
+    experimental_historySearchParamKey?: string;
     visibleMultipleDialog?: boolean; // default true
     DialogContainer?: DialogContentContainer;
     ToastContainer?: DialogContentContainer;
@@ -34,7 +35,6 @@ interface DialogContextProviderProps {
     Confirm?: ComponentType<ConfirmProps>;
     Toast?: ComponentType<ToastProps>;
     onInterceptScrollBlocking?: (visibleDialogs: Array<Dialog>, visibleToasts: Array<Dialog>) => void;
-    historySearchParamKey?: string;
     children?: ReactNode;
 }
 
@@ -54,6 +54,7 @@ export const DialogContext = React.createContext<DialogContextProviderActions>({
 export const DialogContextProvider = ({
     experimental_withHistory = false,
     experimental_withHistoryForwardRestore = false,
+    experimental_historySearchParamKey = "dialog",
     visibleMultipleDialog = true,
     DialogContainer = DefaultDialogContentContainer,
     ToastContainer = DefaultDialogContentContainer,
@@ -61,7 +62,6 @@ export const DialogContextProvider = ({
     Confirm,
     Toast,
     onInterceptScrollBlocking,
-    historySearchParamKey = "dialog",
     children,
 }: DialogContextProviderProps) => {
     const [dialogs, setDialogs] = useState<Array<Dialog<any>>>([]);
@@ -74,10 +74,10 @@ export const DialogContextProvider = ({
     const addHistory = useCallback(
         (dialogId: number) => {
             const url = new URL(window.location.href);
-            url.searchParams.set(historySearchParamKey, dialogId.toString());
+            url.searchParams.set(experimental_historySearchParamKey, dialogId.toString());
             window.history.pushState({}, "", url);
         },
-        [historySearchParamKey]
+        [experimental_historySearchParamKey]
     );
 
     const showDialog = useCallback(
@@ -363,7 +363,7 @@ export const DialogContextProvider = ({
                 backPromiseResolver.current && backPromiseResolver.current();
 
                 const url = new URL(window.location.href);
-                const currentDialogId = Number(url.searchParams.get(historySearchParamKey)) || 0;
+                const currentDialogId = Number(url.searchParams.get(experimental_historySearchParamKey)) || 0;
                 const currentDialog = dialogs.find((dialog) => dialog.id === currentDialogId);
                 const lastVisibleDialog = dialogs.find((dialog) => dialog.id === lastVisibleDialogId.current);
 
@@ -396,7 +396,7 @@ export const DialogContextProvider = ({
                 window.removeEventListener("popstate", onPopState);
             };
         }
-    }, [dialogs, hideDialog, updateDialog, historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
+    }, [dialogs, hideDialog, updateDialog, experimental_historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
 
     const actions = useMemo<DialogContextProviderActions>(() => {
         return {
