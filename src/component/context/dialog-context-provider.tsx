@@ -7,7 +7,7 @@ import {
     DIALOG_TYPE_CONFIRM,
     DIALOG_TYPE_TOAST,
     DialogOptions,
-    HideOptions,
+    ControlOptions,
     ShowDialogResult,
     ShowToastProps,
     UpdateDialog,
@@ -18,12 +18,16 @@ import { selectComponent } from "../../script/util/component-utils";
 import { ToastProps } from "../interface/toast-interfaces";
 import DefaultDialogContentContainer from "../common/default-dialog-content-container";
 
+// TODO restore visible dialogs when navigate and back
+
 let lastDialogId = 0;
 
 type DialogContentContainer = ComponentType<{ children: ReactNode }>;
 
 interface DialogContextProviderProps {
     experimental_withHistory?: boolean;
+    experimental_withHistoryForwardRestore?: boolean; // default false
+    visibleMultipleDialog?: boolean; // default true
     DialogContainer?: DialogContentContainer;
     ToastContainer?: DialogContentContainer;
     Alert?: ComponentType<AlertProps>;
@@ -35,12 +39,12 @@ interface DialogContextProviderProps {
 }
 
 export interface DialogContextProviderActions {
-    showDialog: <DialogResult = void>(element: ReactNode, options?: DialogOptions) => Promise<ShowDialogResult<DialogResult>>;
-    hideDialog: (id: number, hideOptions?: HideOptions) => void;
-    hideDialogAll: (hideOptions?: HideOptions) => void;
-    confirm: (args: ConfirmProps) => Promise<ConfirmResult>;
-    alert: (args: AlertProps) => Promise<void>;
-    toast: (args: ShowToastProps) => void;
+    showDialog: <DialogResult = unknown>(element: ReactNode, options?: DialogOptions) => Promise<ShowDialogResult<DialogResult | undefined>>;
+    hideDialog: (id: number, controlOptions?: ControlOptions) => Promise<void>;
+    hideDialogAll: (controlOptions?: ControlOptions) => Promise<void>;
+    confirm: (args: ConfirmProps, controlOptions?: ControlOptions) => Promise<ConfirmResult>;
+    alert: (args: AlertProps, controlOptions?: ControlOptions) => Promise<void>;
+    toast: (args: ShowToastProps, controlOptions?: ControlOptions) => void;
     findDialogById: (id: number) => Dialog | undefined;
     updateDialog: (id: number, update: UpdateDialog) => boolean;
 }
@@ -49,6 +53,8 @@ export const DialogContext = React.createContext<DialogContextProviderActions>({
 
 export const DialogContextProvider = ({
     experimental_withHistory = false,
+    experimental_withHistoryForwardRestore = false,
+    visibleMultipleDialog = true,
     DialogContainer = DefaultDialogContentContainer,
     ToastContainer = DefaultDialogContentContainer,
     Alert,
@@ -63,6 +69,8 @@ export const DialogContextProvider = ({
     const lastVisibleDialogId = useRef<number>(0);
     const beforeOverflow = useRef<string>("");
 
+    const backPromiseResolver = useRef<() => void>();
+
     const addHistory = useCallback(
         (dialogId: number) => {
             const url = new URL(window.location.href);
@@ -73,10 +81,16 @@ export const DialogContextProvider = ({
     );
 
     const showDialog = useCallback(
-        async <DialogResult,>(element: ReactNode, options?: DialogOptions): Promise<ShowDialogResult<DialogResult>> => {
+        async <DialogResult = unknown,>(
+            element: ReactNode,
+            { ignoreHistory = false, ...options }: DialogOptions = { ignoreHistory: false }
+        ): Promise<ShowDialogResult<DialogResult | undefined>> => {
+            const dialogOptions: DialogOptions = { ...options, ignoreHistory };
+
             let createdId: number;
-            let resolve: ((value: ShowDialogResult<DialogResult> | PromiseLike<ShowDialogResult<DialogResult>>) => void) | undefined = undefined;
-            const promise = new Promise<ShowDialogResult<DialogResult>>((_resolve) => {
+            let resolve: ((value: ShowDialogResult<DialogResult | undefined> | PromiseLike<ShowDialogResult<DialogResult | undefined>>) => void) | undefined =
+                undefined;
+            const promise = new Promise<ShowDialogResult<DialogResult | undefined>>((_resolve) => {
                 resolve = _resolve;
             });
 
@@ -99,7 +113,7 @@ export const DialogContextProvider = ({
                     element,
                     visible: true,
                     resolve,
-                    options,
+                    options: dialogOptions,
                 };
                 setDialogs((prevDialogs) => {
                     return prevDialogs.map((prevDialog) => {
@@ -118,14 +132,14 @@ export const DialogContextProvider = ({
                     element,
                     visible: true,
                     resolve,
-                    options,
+                    options: dialogOptions,
                 };
                 setDialogs((prevDialogs) => {
                     return [...prevDialogs, createdDialog];
                 });
             }
 
-            if (experimental_withHistory) {
+            if (!ignoreHistory && experimental_withHistory) {
                 addHistory(createdDialog.id);
             }
             lastVisibleDialogId.current = createdDialog.id;
@@ -136,11 +150,16 @@ export const DialogContextProvider = ({
     );
 
     const hideDialog = useCallback(
-        (id: number, { ignoreHistory = false }: HideOptions = {}) => {
-            const hideTarget = dialogs.find((dialog) => dialog.id === id);
+        async (id: number, { ignoreHistory = false }: ControlOptions = { ignoreHistory: false }) => {
+            let promise: Promise<void> | undefined;
+            const hideTarget: Dialog<undefined> | undefined = dialogs.find((dialog) => dialog.id === id);
             if (hideTarget) {
-                if (!ignoreHistory && experimental_withHistory) {
+                if (!(hideTarget.options?.ignoreHistory ?? false) && !ignoreHistory && experimental_withHistory) {
                     window.history.go(-1);
+
+                    promise = new Promise<void>((resolve) => {
+                        backPromiseResolver.current = () => resolve();
+                    });
                 }
                 hideTarget.options?.onDismiss && hideTarget.options?.onDismiss();
 
@@ -157,15 +176,31 @@ export const DialogContextProvider = ({
                     });
                 });
             }
+
+            if (promise) {
+                await promise;
+            }
         },
         [dialogs, experimental_withHistory]
     );
 
     const hideDialogAll = useCallback(
-        ({ ignoreHistory = false }: HideOptions = {}) => {
+        async ({ ignoreHistory = false }: ControlOptions = { ignoreHistory: false }) => {
+            let promise: Promise<void> | undefined;
             const hideTargets: Array<Dialog> = dialogs.filter((dialog) => dialog.visible);
+            const backwardDelta = hideTargets.reduce((acc, hideTarget) => {
+                return acc + (!(hideTarget.options?.ignoreHistory ?? false) ? 1 : 0);
+            }, 0);
             if (!ignoreHistory && experimental_withHistory && hideTargets.length > 0) {
-                window.history.go(-hideTargets.length);
+                if (backwardDelta !== 0) {
+                    window.history.go(-backwardDelta);
+                }
+
+                promise = new Promise<void>((resolve) => {
+                    backPromiseResolver.current = () => {
+                        resolve();
+                    };
+                });
             }
             if (hideTargets.length > 0)
                 setDialogs((prevDialogs) => {
@@ -180,14 +215,19 @@ export const DialogContextProvider = ({
                         };
                     });
                 });
+
+            if (promise) {
+                await promise;
+            }
         },
         [dialogs, experimental_withHistory]
     );
 
     const confirm = useCallback(
-        async (args: ConfirmProps): Promise<ConfirmResult> => {
+        async (args: ConfirmProps, controlOptions?: ControlOptions): Promise<ConfirmResult> => {
             if (Confirm === undefined) throw new Error("Confirm component is not set.");
             const dialogResult = await showDialog<ConfirmResult>(<Confirm {...args} />, {
+                ...controlOptions,
                 dialogType: DIALOG_TYPE_CONFIRM,
             });
             return dialogResult.result!;
@@ -196,9 +236,10 @@ export const DialogContextProvider = ({
     );
 
     const alert = useCallback(
-        async (args: AlertProps): Promise<void> => {
+        async (args: AlertProps, controlOptions?: ControlOptions): Promise<void> => {
             if (Alert === undefined) throw new Error("Alert component is not set.");
             await showDialog<void>(<Alert {...args} />, {
+                ...controlOptions,
                 dialogType: DIALOG_TYPE_ALERT,
             });
         },
@@ -206,10 +247,11 @@ export const DialogContextProvider = ({
     );
 
     const toast = useCallback(
-        (args: ShowToastProps) => {
+        (args: ShowToastProps, controlOptions: ControlOptions = { ignoreHistory: true }) => {
             if (Toast === undefined) throw new Error("Toast component is not set.");
             const { unique, ...rest } = args;
             void showDialog(<Toast {...rest} />, {
+                ...controlOptions,
                 dialogType: DIALOG_TYPE_TOAST,
                 unique,
             });
@@ -218,16 +260,31 @@ export const DialogContextProvider = ({
     );
 
     const dialogContents = useMemo(() => {
-        return dialogs
-            ?.filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST)
-            .map((dialog) => {
-                return (
-                    <Fragment key={dialog.id}>
-                        <DialogActionContextProvider id={dialog.id}>{dialog.element}</DialogActionContextProvider>
-                    </Fragment>
-                );
-            });
-    }, [dialogs]);
+        if (visibleMultipleDialog) {
+            // multiple visible dialogs
+            return dialogs
+                .filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST)
+                .map((dialog) => {
+                    return (
+                        <Fragment key={dialog.id}>
+                            <DialogActionContextProvider id={dialog.id}>{dialog.element}</DialogActionContextProvider>
+                        </Fragment>
+                    );
+                });
+        } else {
+            // single visible dialog
+            const foundLastVisibleDialog = dialogs.findLast((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST);
+            if (foundLastVisibleDialog !== undefined) {
+                return [
+                    <Fragment key={foundLastVisibleDialog.id}>
+                        <DialogActionContextProvider id={foundLastVisibleDialog.id}>{foundLastVisibleDialog.element}</DialogActionContextProvider>
+                    </Fragment>,
+                ];
+            } else {
+                return [];
+            }
+        }
+    }, [dialogs, visibleMultipleDialog]);
 
     const toastContents = useMemo(() => {
         return dialogs
@@ -303,11 +360,34 @@ export const DialogContextProvider = ({
         if (experimental_withHistory) {
             // event: PopStateEvent
             const onPopState = () => {
+                backPromiseResolver.current && backPromiseResolver.current();
+
                 const url = new URL(window.location.href);
                 const currentDialogId = Number(url.searchParams.get(historySearchParamKey)) || 0;
+                const currentDialog = dialogs.find((dialog) => dialog.id === currentDialogId);
                 const lastVisibleDialog = dialogs.find((dialog) => dialog.id === lastVisibleDialogId.current);
-                if (lastVisibleDialog !== undefined && lastVisibleDialog.visible) {
-                    hideDialog(lastVisibleDialogId.current, { ignoreHistory: true });
+
+                let doHistoryWork = true;
+                if (currentDialogId >= lastVisibleDialogId.current) {
+                    // forward
+                    if (!experimental_withHistoryForwardRestore) {
+                        doHistoryWork = false;
+                    }
+                } else {
+                    // backward
+                }
+
+                if (doHistoryWork) {
+                    if (lastVisibleDialog !== undefined && lastVisibleDialog.visible) {
+                        lastVisibleDialog.resolve({
+                            id: lastVisibleDialog.id,
+                            result: undefined,
+                        });
+                        updateDialog(lastVisibleDialogId.current, { visible: false });
+                    }
+                    if (currentDialog !== undefined && !currentDialog.visible) {
+                        updateDialog(currentDialogId, { visible: true });
+                    }
                 }
                 lastVisibleDialogId.current = currentDialogId;
             };
@@ -316,7 +396,7 @@ export const DialogContextProvider = ({
                 window.removeEventListener("popstate", onPopState);
             };
         }
-    }, [dialogs, hideDialog, historySearchParamKey, experimental_withHistory]);
+    }, [dialogs, hideDialog, updateDialog, historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
 
     const actions = useMemo<DialogContextProviderActions>(() => {
         return {

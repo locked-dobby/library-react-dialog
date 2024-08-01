@@ -20,11 +20,11 @@ const MyCustomDialog = ({ choices }: MyCustomDialogProps) => {
                 <div
                     className="dialog-dimmed"
                     onClick={() => {
-                        hide([]);
+                        hide();
                     }}
                 />
                 <div className="dialog-content">
-                    <h1>Select your choice</h1>
+                    <h2>Select your choice</h2>
                     <ul>
                         {choices.map((choice) => {
                             const checkboxId = `checkboxId-${choice.id}-${choice.display}`;
@@ -55,7 +55,7 @@ const MyCustomDialog = ({ choices }: MyCustomDialogProps) => {
                         <li>
                             <button
                                 onClick={() => {
-                                    hide([]);
+                                    hide();
                                 }}>
                                 Dismiss
                             </button>

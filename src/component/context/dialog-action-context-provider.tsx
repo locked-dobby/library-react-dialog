@@ -2,21 +2,23 @@ import React, { ReactNode, useCallback, useMemo, useRef } from "react";
 import { useDialogContext } from "../hook/use-dialog-context";
 import { NavigateOptions } from "../interface/abstract-dialog-interfaces";
 
+// TODO event listeners
+
 interface DialogActionContextProviderProps {
     id: number;
     children?: ReactNode;
 }
 
 export interface DialogActionContextProviderActions<DialogResult> {
-    hide: (result: DialogResult) => void;
-    hideAfter: (afterMilliseconds: number, result: DialogResult) => void;
-    doNavigate: (callback: () => void, navigateOptions?: NavigateOptions) => void;
+    hide: (result?: DialogResult) => void;
+    hideAfter: (afterMilliseconds: number, result?: DialogResult) => void;
+    doNavigate: (callback: () => void, navigateOptions?: NavigateOptions) => Promise<void>;
 }
 
 export const DialogActionContext = React.createContext<DialogActionContextProviderActions<any>>({} as DialogActionContextProviderActions<unknown>);
 
 export const DialogActionContextProvider = <DialogResult,>({ id, children }: DialogActionContextProviderProps) => {
-    const { hideDialog, findDialogById } = useDialogContext();
+    const { hideDialog, hideDialogAll, findDialogById } = useDialogContext();
     const hideWorkerId = useRef<ReturnType<typeof setTimeout>>();
 
     const currentDialog = useMemo(() => {
@@ -57,13 +59,11 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
     );
 
     const doNavigate = useCallback(
-        (callback: () => void, { keepVisibleDialog = false }: NavigateOptions = {}) => {
-            if (!keepVisibleDialog) {
-                hideDialog(id);
-            }
+        async (callback: () => void, { keepVisibleDialog = false }: NavigateOptions = {}) => {
+            await hideDialogAll({ ignoreHistory: keepVisibleDialog });
             callback();
         },
-        [hideDialog, id]
+        [hideDialogAll]
     );
 
     const actions = useMemo<DialogActionContextProviderActions<DialogResult>>(() => {

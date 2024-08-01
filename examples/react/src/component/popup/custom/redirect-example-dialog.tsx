@@ -1,9 +1,11 @@
 import { useDialogActionContext, useDialogContext } from "@edge-effect/react-abstract-dialog";
 import { useNavigate } from "react-router-dom";
+import { getNextUnique } from "../../../script/util/common-utils";
 
-const RedirectExampleDialog = () => {
+export type RedirectExampleDialogResult = { unique: number };
+const RedirectExampleDialog = ({ unique }: { unique: number }) => {
     const { showDialog } = useDialogContext();
-    const { hide, doNavigate } = useDialogActionContext();
+    const { hide, doNavigate } = useDialogActionContext<RedirectExampleDialogResult>();
     const navigate = useNavigate();
 
     return (
@@ -16,11 +18,12 @@ const RedirectExampleDialog = () => {
                     }}
                 />
                 <div className="dialog-content">
+                    <h2>Redirect example dialog ({unique})</h2>
                     <ul className="horizontal">
                         <li>
                             <button
-                                onClick={() => {
-                                    showDialog(<RedirectExampleDialog />);
+                                onClick={async () => {
+                                    showDialog(<RedirectExampleDialog unique={getNextUnique()} />);
                                 }}>
                                 Open again
                             </button>
@@ -28,6 +31,8 @@ const RedirectExampleDialog = () => {
                         <li>
                             <button
                                 onClick={() => {
+                                    // keepVisibleDialog does not work with window.location.href.
+                                    // keepVisibleDialog default false
                                     doNavigate(() => (window.location.href = "/hello-world"));
                                 }}>
                                 Redirect to
@@ -36,12 +41,14 @@ const RedirectExampleDialog = () => {
                         <li>
                             <button
                                 onClick={() => {
-                                    doNavigate(() => {
-                                        console.log(2);
-                                        navigate("/hello-world");
-                                    });
+                                    doNavigate(
+                                        () => {
+                                            navigate("/hello-world");
+                                        },
+                                        { keepVisibleDialog: true }
+                                    );
                                 }}>
-                                Redirect to (2)
+                                Redirect to (keep)
                             </button>
                         </li>
                     </ul>

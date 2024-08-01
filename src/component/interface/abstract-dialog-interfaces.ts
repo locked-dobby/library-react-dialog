@@ -7,7 +7,10 @@ export const DIALOG_TYPE_TOAST = "toast";
 export const DIALOG_TYPE_CUSTOM = "custom";
 export type DialogType = typeof DIALOG_TYPE_CONFIRM | typeof DIALOG_TYPE_ALERT | typeof DIALOG_TYPE_TOAST | typeof DIALOG_TYPE_CUSTOM;
 
-export interface DialogOptions {
+export interface ControlOptions {
+    ignoreHistory?: boolean; // default false
+}
+export interface DialogOptions extends ControlOptions {
     unique?: string; // unique 를 할당하면, 해당 unique 로 2개 이상(visible) 표시 되지 않도록 합니다.
     dialogType?: DialogType;
     onDismiss?: () => void;
@@ -31,10 +34,6 @@ export interface ShowDialogResult<DialogResult = unknown> {
 }
 
 export type UpdateDialog = Partial<Pick<Dialog, "visible" | "options">>;
-
-export interface HideOptions {
-    ignoreHistory?: boolean; // default false
-}
 
 export interface NavigateOptions {
     keepVisibleDialog?: boolean; // default false if withHistory

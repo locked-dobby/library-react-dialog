@@ -1,6 +1,7 @@
 import { useDialogContext } from "@edge-effect/react-abstract-dialog";
 import MyCustomDialog, { MyCustomDialogResult } from "./popup/custom/my-custom-dialog";
-import RedirectExampleDialog from "./popup/custom/redirect-example-dialog";
+import RedirectExampleDialog, { RedirectExampleDialogResult } from "./popup/custom/redirect-example-dialog";
+import { getNextUnique } from "../script/util/common-utils";
 
 const choices = [
     { id: 1, display: "Apple" },
@@ -85,19 +86,19 @@ const HomeContainer = () => {
                 <li>
                     <button
                         onClick={async () => {
-                            const dialog = await showDialog<MyCustomDialogResult>(<MyCustomDialog choices={choices} />);
+                            const dialog = await showDialog<RedirectExampleDialogResult>(<RedirectExampleDialog unique={getNextUnique()} />);
                             console.log("result", dialog.result);
                         }}>
-                        Show custom dialog
+                        Show redirect example
                     </button>
                 </li>
                 <li>
                     <button
                         onClick={async () => {
-                            const dialog = await showDialog(<RedirectExampleDialog />);
+                            const dialog = await showDialog<MyCustomDialogResult>(<MyCustomDialog choices={choices} />);
                             console.log("result", dialog.result);
                         }}>
-                        Show redirect example
+                        Show custom dialog
                     </button>
                 </li>
             </ul>
