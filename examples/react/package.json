@@ -5,13 +5,14 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "dev-package": "npx yalc add @edge-effect/react-abstract-dialog && cd ../.. && npx tsc-watch --onSuccess 'npx yalc push --sig'",
+        "dev-package": "npx yalc add @locked-dobby/library-react-dialog && cd ../.. && npx tsc-watch --onSuccess 'npx yalc push --sig'",
+        "install-package": "rm -rf node_modules && CURRENT=$PWD && cd ../.. && TARGET=$(npm run build-local | tail -n 1) && echo install... $TARGET && cd $CURRENT && npm install ../../$TARGET",
         "build": "tsc -b && vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview"
     },
     "dependencies": {
-        "@edge-effect/react-abstract-dialog": "file:.yalc/@edge-effect/react-abstract-dialog",
+        "@locked-dobby/library-react-dialog": "file:.yalc/@locked-dobby/library-react-dialog",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-router-dom": "^6.25.1"

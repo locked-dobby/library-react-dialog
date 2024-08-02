@@ -1,4 +1,4 @@
-# React abstract dialog
+# Library react dialog
 
 -   해당 라이브러리는 리액트에서 동작하는 dialog 관리 context 입니다.
 -   쉽게 confirm, alert, toast 그리고 custom dialog 들을 해당 컨텍스트로 관리 할 수 있습니다.
@@ -6,7 +6,7 @@
 # Installation
 
 ```bash
-$ npm install @edge-effect/react-abstract-dialog
+$ npm install @locked-dobby/library-react-dialog
 ```
 
 # Usage
@@ -84,7 +84,7 @@ const MyComponent = () => {
 -   예를들어...
 
     ```typescript
-    import { AlertProps, useDialogActionContext } from "@edge-effect/react-abstract-dialog";
+    import { AlertProps, useDialogActionContext } from "@locked-dobby/library-react-dialog";
 
     const Alert = ({ title, message, textOk = "ok" }: AlertProps) => {
         const { hide } = useDialogActionContext();

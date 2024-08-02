@@ -1,5 +1,5 @@
 {
-    "name": "@edge-effect/react-abstract-dialog",
+    "name": "@locked-dobby/library-react-dialog",
     "version": "1.0.1",
     "description": "implementing abstract dialog in react",
     "keywords": [
@@ -10,18 +10,18 @@
         "provider",
         "abstract"
     ],
-    "homepage": "https://github.com/Team-EdgeEffect/react-abstract-dialog#readme",
+    "homepage": "https://github.com/locked-dobby/library-react-dialog#readme",
     "author": {
-        "name": "@Team-EdgeEffect#dark1451",
+        "name": "@locked-dobby#dark1451",
         "email": "dark1451@gmail.com",
-        "url": "https://github.com/Team-EdgeEffect"
+        "url": "https://github.com/locked-dobby"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Team-EdgeEffect/react-abstract-dialog"
+        "url": "git+https://github.com/locked-dobby/library-react-dialog"
     },
     "bugs": {
-        "url": "https://github.com/Team-EdgeEffect/react-abstract-dialog/issues",
+        "url": "https://github.com/locked-dobby/library-react-dialog/issues",
         "email": "dark1451@gmail.com"
     },
     "scripts": {

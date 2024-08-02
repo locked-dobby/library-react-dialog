@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [
         react(),
         ViteRestart({
-            restart: ["./.yalc/@edge-effect/react-abstract-dialog/yalc.sig"],
+            restart: ["./.yalc/@locked-dobby/library-react-dialog/yalc.sig"],
         }),
     ],
 });
