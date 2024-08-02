@@ -25,9 +25,9 @@ let lastDialogId = 0;
 type DialogContentContainer = ComponentType<{ children: ReactNode }>;
 
 interface DialogContextProviderProps {
-    experimental_withHistory?: boolean;
-    experimental_withHistoryForwardRestore?: boolean; // default false
-    experimental_historySearchParamKey?: string;
+    withHistory?: boolean;
+    withHistoryForwardRestore?: boolean; // default false
+    historySearchParamKey?: string;
     visibleMultipleDialog?: boolean; // default true
     DialogContainer?: DialogContentContainer;
     ToastContainer?: DialogContentContainer;
@@ -52,9 +52,9 @@ export interface DialogContextProviderActions {
 export const DialogContext = React.createContext<DialogContextProviderActions>({} as DialogContextProviderActions);
 
 export const DialogContextProvider = ({
-    experimental_withHistory = false,
-    experimental_withHistoryForwardRestore = false,
-    experimental_historySearchParamKey = "dialog",
+    withHistory = false,
+    withHistoryForwardRestore = false,
+    historySearchParamKey = "dialog",
     visibleMultipleDialog = true,
     DialogContainer = DefaultDialogContentContainer,
     ToastContainer = DefaultDialogContentContainer,
@@ -74,10 +74,10 @@ export const DialogContextProvider = ({
     const addHistory = useCallback(
         (dialogId: number) => {
             const url = new URL(window.location.href);
-            url.searchParams.set(experimental_historySearchParamKey, dialogId.toString());
+            url.searchParams.set(historySearchParamKey, dialogId.toString());
             window.history.pushState({}, "", url);
         },
-        [experimental_historySearchParamKey]
+        [historySearchParamKey]
     );
 
     const showDialog = useCallback(
@@ -139,14 +139,14 @@ export const DialogContextProvider = ({
                 });
             }
 
-            if (!ignoreHistory && experimental_withHistory) {
+            if (!ignoreHistory && withHistory) {
                 addHistory(createdDialog.id);
             }
             lastVisibleDialogId.current = createdDialog.id;
 
             return promise;
         },
-        [addHistory, dialogs, experimental_withHistory]
+        [addHistory, dialogs, withHistory]
     );
 
     const hideDialog = useCallback(
@@ -154,7 +154,7 @@ export const DialogContextProvider = ({
             let promise: Promise<void> | undefined;
             const hideTarget: Dialog<undefined> | undefined = dialogs.find((dialog) => dialog.id === id);
             if (hideTarget) {
-                if (!(hideTarget.options?.ignoreHistory ?? false) && !ignoreHistory && experimental_withHistory) {
+                if (!(hideTarget.options?.ignoreHistory ?? false) && !ignoreHistory && withHistory) {
                     window.history.go(-1);
 
                     promise = new Promise<void>((resolve) => {
@@ -181,7 +181,7 @@ export const DialogContextProvider = ({
                 await promise;
             }
         },
-        [dialogs, experimental_withHistory]
+        [dialogs, withHistory]
     );
 
     const hideDialogAll = useCallback(
@@ -191,7 +191,7 @@ export const DialogContextProvider = ({
             const backwardDelta = hideTargets.reduce((acc, hideTarget) => {
                 return acc + (!(hideTarget.options?.ignoreHistory ?? false) ? 1 : 0);
             }, 0);
-            if (!ignoreHistory && experimental_withHistory && hideTargets.length > 0) {
+            if (!ignoreHistory && withHistory && hideTargets.length > 0) {
                 if (backwardDelta !== 0) {
                     window.history.go(-backwardDelta);
                 }
@@ -220,7 +220,7 @@ export const DialogContextProvider = ({
                 await promise;
             }
         },
-        [dialogs, experimental_withHistory]
+        [dialogs, withHistory]
     );
 
     const confirm = useCallback(
@@ -357,20 +357,20 @@ export const DialogContextProvider = ({
 
     // history
     useEffect(() => {
-        if (experimental_withHistory) {
+        if (withHistory) {
             // event: PopStateEvent
             const onPopState = () => {
                 backPromiseResolver.current && backPromiseResolver.current();
 
                 const url = new URL(window.location.href);
-                const currentDialogId = Number(url.searchParams.get(experimental_historySearchParamKey)) || 0;
+                const currentDialogId = Number(url.searchParams.get(historySearchParamKey)) || 0;
                 const currentDialog = dialogs.find((dialog) => dialog.id === currentDialogId);
                 const lastVisibleDialog = dialogs.find((dialog) => dialog.id === lastVisibleDialogId.current);
 
                 let doHistoryWork = true;
                 if (currentDialogId >= lastVisibleDialogId.current) {
                     // forward
-                    if (!experimental_withHistoryForwardRestore) {
+                    if (!withHistoryForwardRestore) {
                         doHistoryWork = false;
                     }
                 } else {
@@ -396,7 +396,7 @@ export const DialogContextProvider = ({
                 window.removeEventListener("popstate", onPopState);
             };
         }
-    }, [dialogs, hideDialog, updateDialog, experimental_historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
+    }, [dialogs, hideDialog, updateDialog, historySearchParamKey, withHistory, withHistoryForwardRestore]);
 
     const actions = useMemo<DialogContextProviderActions>(() => {
         return {

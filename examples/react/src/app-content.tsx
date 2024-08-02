@@ -10,7 +10,7 @@ const AppContent = () => {
     return (
         <>
             <DialogContextProvider
-                experimental_withHistory={true}
+                withHistory={true}
                 ToastContainer={({ children }: { children: ReactNode }) => {
                     return <div className="toast-container">{children}</div>;
                 }}
