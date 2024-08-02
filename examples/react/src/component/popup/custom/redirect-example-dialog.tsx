@@ -1,4 +1,4 @@
-import { useDialogActionContext, useDialogContext } from "@edge-effect/react-abstract-dialog";
+import { useDialogActionContext, useDialogContext } from "@locked-dobby/library-react-dialog";
 import { useNavigate } from "react-router-dom";
 import { getNextUnique } from "../../../script/util/common-utils";
 

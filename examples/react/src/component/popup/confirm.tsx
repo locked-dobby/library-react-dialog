@@ -1,4 +1,4 @@
-import { ConfirmProps, useDialogActionContext } from "@edge-effect/react-abstract-dialog";
+import { ConfirmProps, useDialogActionContext } from "@locked-dobby/library-react-dialog";
 
 const Confirm = ({ title, message, textYes = "yes", textNo = "no" }: ConfirmProps) => {
     const { hide } = useDialogActionContext<boolean>();

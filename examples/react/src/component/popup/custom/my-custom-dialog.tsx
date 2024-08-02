@@ -1,4 +1,4 @@
-import { useDialogActionContext } from "@edge-effect/react-abstract-dialog";
+import { useDialogActionContext } from "@locked-dobby/library-react-dialog";
 import { useRef } from "react";
 
 type Choice = { id: number; display: string };

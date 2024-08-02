@@ -1,4 +1,4 @@
-import { TOAST_DURATION_SHORT, ToastProps, useDialogActionContext } from "@edge-effect/react-abstract-dialog";
+import { TOAST_DURATION_SHORT, ToastProps, useDialogActionContext } from "@locked-dobby/library-react-dialog";
 
 const Toast = ({ message, duration = TOAST_DURATION_SHORT }: ToastProps) => {
     useDialogActionContext({

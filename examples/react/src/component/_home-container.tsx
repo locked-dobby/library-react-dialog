@@ -1,4 +1,4 @@
-import { useDialogContext } from "@edge-effect/react-abstract-dialog";
+import { useDialogContext } from "@locked-dobby/library-react-dialog";
 import MyCustomDialog, { MyCustomDialogResult } from "./popup/custom/my-custom-dialog";
 import RedirectExampleDialog, { RedirectExampleDialogResult } from "./popup/custom/redirect-example-dialog";
 import { getNextUnique } from "../script/util/common-utils";

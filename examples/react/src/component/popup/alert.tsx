@@ -1,4 +1,4 @@
-import { AlertProps, useDialogActionContext } from "@edge-effect/react-abstract-dialog";
+import { AlertProps, useDialogActionContext } from "@locked-dobby/library-react-dialog";
 
 const Alert = ({ title, message, textOk = "ok" }: AlertProps) => {
     const { hide } = useDialogActionContext();
