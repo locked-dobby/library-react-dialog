@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 
 import { DialogContextProvider } from "@locked-dobby/library-react-dialog";
-import Confirm from "./component/popup/confirm";
-import Alert from "./component/popup/alert";
-import Toast from "./component/popup/toast";
+import Confirm from "./popup/confirm";
+import Alert from "./popup/alert";
+import Toast from "./popup/toast";
 import { Outlet } from "react-router-dom";
 
 const AppContent = () => {
