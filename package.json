@@ -1,6 +1,6 @@
 {
     "name": "@locked-dobby/library-react-dialog",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "implementing abstract dialog in react",
     "keywords": [
         "dialog",
