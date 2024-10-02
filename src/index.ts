@@ -1,3 +1,5 @@
+import "client-only";
+
 export * from "./component/context/dialog-context-provider";
 export * from "./component/context/dialog-action-context-provider";
 
